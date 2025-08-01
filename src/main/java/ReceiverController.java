@@ -23,44 +23,73 @@ public class ReceiverController {
 
     @FXML
     private void handleReceive() {
-        String folderPath = savePathField.getText();
         int port;
 
+        String folderPath = savePathField.getText();
+
         if (folderPath == null || folderPath.trim().isEmpty()) {
-            statusLabel.setText("Select a folder path.");
+            statusLabel.setText("Select a Folder Path");
             return;
         }
 
         File folder = new File(folderPath);
         if (!folder.exists() || !folder.isDirectory()) {
-            statusLabel.setText("Invalid folder path.");
+            statusLabel.setText("Invalid File Path");
             return;
         }
 
         try {
             port = Integer.parseInt(portField.getText());
         } catch (NumberFormatException e) {
-            statusLabel.setText("Invalid port number.");
+            statusLabel.setText("Invalid Port Number");
             return;
         }
 
-        statusLabel.setText("Waiting for sender...");
-        progressBar.setProgress(0);
+        statusLabel.setText("Waiting for incoming file...");
 
-        FileReceiver receiver = new FileReceiver(port, folderPath);
+        FileReceiver receiver = new FileReceiver(port, folder.getAbsolutePath());
 
-        // Progress bar güncelleyicisi
-        receiver.setProgressCallback(progress -> Platform.runLater(() -> {
-            progressBar.setProgress(progress);
-        }));
+        // Progress callback
+        receiver.setProgressCallback(progress -> Platform.runLater(() -> progressBar.setProgress(progress)));
 
-        new Thread(() -> {
-            receiver.receiveFile(true); // otomatik kabul
+
+        receiver.setConfirmationCallback((fileName, fileSize) -> {
+            final boolean[] userDecision = {false};
+            final Object lock = new Object();
 
             Platform.runLater(() -> {
-                statusLabel.setText("File transfer completed.");
-                progressBar.setProgress(1.0); // %100 tamamlandı
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Incoming File");
+                alert.setHeaderText("Do you want to receive this file?");
+                alert.setContentText("File Name: " + fileName + "\nFile Size: " + (fileSize / 1024) + " KB");
+
+                ButtonType yes = new ButtonType("Yes");
+                ButtonType no = new ButtonType("No", ButtonBar.ButtonData.CANCEL_CLOSE);
+                alert.getButtonTypes().setAll(yes, no);
+
+                alert.showAndWait().ifPresent(response -> {
+                    userDecision[0] = response == yes;
+                    synchronized (lock) {
+                        lock.notify();
+                    }
+                });
             });
+
+
+            try {
+                synchronized (lock) {
+                    lock.wait();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            return userDecision[0];
+        });
+
+        new Thread(() -> {
+            receiver.receiveFile();
+            Platform.runLater(() -> statusLabel.setText("File transfer is completed."));
         }).start();
     }
 }

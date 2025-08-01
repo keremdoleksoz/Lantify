@@ -11,7 +11,6 @@ public class FileReceiver {
         this.savePath = savePath;
     }
 
-
     public interface ProgressCallback {
         void onProgressUpdate(double progress); // 0.0 - 1.0
     }
@@ -22,7 +21,17 @@ public class FileReceiver {
         this.progressCallback = callback;
     }
 
-    public void receiveFile(boolean acceptFile) {
+    public interface ConfirmationCallback {
+        boolean confirm(String fileName, long fileSize);
+    }
+
+    private ConfirmationCallback confirmationCallback;
+
+    public void setConfirmationCallback(ConfirmationCallback callback) {
+        this.confirmationCallback = callback;
+    }
+
+    public void receiveFile() {
         try (ServerSocket serverSocket = new ServerSocket(listenPort)) {
             System.out.println("Listening on port " + listenPort);
             Socket clientSocket = serverSocket.accept();
@@ -37,9 +46,12 @@ public class FileReceiver {
             String fileName = reader.readLine();
             long fileSize = Long.parseLong(reader.readLine());
 
-            System.out.println("File Informations: ");
-            System.out.println("File Name: " + fileName);
-            System.out.println("File Size: " + fileSize);
+            System.out.println("File Information:");
+            System.out.println("Name: " + fileName);
+            System.out.println("Size: " + fileSize);
+
+            // Kullanıcıdan onay al
+            boolean acceptFile = confirmationCallback == null || confirmationCallback.confirm(fileName, fileSize);
 
             if (acceptFile) {
                 writer.println("Y");
@@ -58,7 +70,6 @@ public class FileReceiver {
                     double progress = (double) totalRead / fileSize;
                     System.out.printf("Receiving: %.2f%%\r", progress * 100);
 
-                    // GUI tarafına ilerleme bildirimi
                     if (progressCallback != null) {
                         progressCallback.onProgressUpdate(progress);
                     }
@@ -68,7 +79,6 @@ public class FileReceiver {
 
                 fileOut.close();
                 System.out.println("File saved successfully at " + outFile.getAbsolutePath());
-
             } else {
                 writer.println("N");
                 System.out.println("Transfer refused. Connection closed!");
