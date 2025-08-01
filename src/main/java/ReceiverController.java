@@ -9,6 +9,8 @@ public class ReceiverController {
     @FXML private TextField savePathField;
     @FXML private Label statusLabel;
     @FXML private ProgressBar progressBar;
+    @FXML private Label speedLabel;
+    @FXML private Label etaLabel;
 
     private File selectedFolder;
 
@@ -46,13 +48,20 @@ public class ReceiverController {
         }
 
         statusLabel.setText("Waiting for incoming file...");
+        progressBar.setProgress(0);
+        speedLabel.setText("Speed: -");
+        etaLabel.setText("ETA: -");
 
         FileReceiver receiver = new FileReceiver(port, folder.getAbsolutePath());
 
-        // Progress callback
-        receiver.setProgressCallback(progress -> Platform.runLater(() -> progressBar.setProgress(progress)));
+        // Progress callback: speed, eta, percent
+        receiver.setProgressCallback((progress, speedKBs, etaSeconds) -> Platform.runLater(() -> {
+            progressBar.setProgress(progress);
+            speedLabel.setText(String.format("Speed: %.2f KB/s", speedKBs));
+            etaLabel.setText(String.format("ETA: %.1f sec", etaSeconds));
+        }));
 
-
+        // Onay ekranı
         receiver.setConfirmationCallback((fileName, fileSize) -> {
             final boolean[] userDecision = {false};
             final Object lock = new Object();
@@ -75,7 +84,6 @@ public class ReceiverController {
                 });
             });
 
-
             try {
                 synchronized (lock) {
                     lock.wait();
@@ -89,7 +97,11 @@ public class ReceiverController {
 
         new Thread(() -> {
             receiver.startReceiving();
-            Platform.runLater(() -> statusLabel.setText("File transfer is completed."));
+            Platform.runLater(() -> {
+                statusLabel.setText("File transfer is completed.");
+                speedLabel.setText("Speed: -");
+                etaLabel.setText("ETA: -");
+            });
         }).start();
     }
 }

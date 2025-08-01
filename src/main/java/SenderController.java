@@ -13,8 +13,8 @@ public class SenderController {
     @FXML private Label statusLabel;
     @FXML private ProgressBar progressBar;
     @FXML private Label currentFileLabel;
-
-
+    @FXML private Label speedLabel;
+    @FXML private Label etaLabel;
 
     private List<File> selectedFiles = new ArrayList<>();
 
@@ -52,6 +52,8 @@ public class SenderController {
 
         progressBar.setProgress(0);
         statusLabel.setText("Sending files...");
+        speedLabel.setText("Speed: -");
+        etaLabel.setText("ETA: -");
 
         new Thread(() -> {
             for (int i = 0; i < selectedFiles.size(); i++) {
@@ -61,10 +63,30 @@ public class SenderController {
 
                 FileSender sender = new FileSender(file.getAbsolutePath(), ip, port);
                 int index = i;
-                sender.setProgressCallback(progress -> Platform.runLater(() -> {
 
+                long startTime = System.nanoTime();
+
+                sender.setProgressCallback(progress -> Platform.runLater(() -> {
                     double totalProgress = (index + progress) / selectedFiles.size();
                     progressBar.setProgress(totalProgress);
+
+                    // Geçen süre
+                    long elapsedTimeNano = System.nanoTime() - startTime;
+                    double elapsedSeconds = elapsedTimeNano / 1_000_000_000.0;
+
+                    long fileSize = file.length();
+                    long sentBytes = (long)(fileSize * progress);
+
+                    double speedKBps = (sentBytes / 1024.0) / elapsedSeconds;
+                    double remainingBytes = fileSize - sentBytes;
+                    double etaSeconds = (speedKBps > 0) ? (remainingBytes / 1024.0) / speedKBps : -1;
+
+                    speedLabel.setText(String.format("Speed: %.2f KB/s", speedKBps));
+                    if (etaSeconds >= 0) {
+                        etaLabel.setText(String.format("ETA: %.1f s", etaSeconds));
+                    } else {
+                        etaLabel.setText("ETA: calculating...");
+                    }
                 }));
 
                 sender.sendFile();
@@ -72,7 +94,10 @@ public class SenderController {
 
             Platform.runLater(() -> {
                 statusLabel.setText("All files sent successfully.");
-                currentFileLabel.setText("Done.");});
+                currentFileLabel.setText("Done.");
+                speedLabel.setText("Speed: -");
+                etaLabel.setText("ETA: -");
+            });
 
         }).start();
     }

@@ -12,7 +12,7 @@ public class FileReceiver {
     }
 
     public interface ProgressCallback {
-        void onProgressUpdate(double progress); // 0.0 - 1.0
+        void onProgressUpdate(double progress, double speedKBs, double etaSeconds);
     }
 
     private ProgressCallback progressCallback;
@@ -39,7 +39,6 @@ public class FileReceiver {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Accepted connection from " + clientSocket.getInetAddress().getHostName());
 
-                // Her dosya transferi için ayrı bir thread
                 new Thread(() -> handleSingleFileReceive(clientSocket)).start();
             }
 
@@ -71,22 +70,33 @@ public class FileReceiver {
                     int bytesRead;
                     long totalRead = 0;
 
+                    long startTime = System.nanoTime();
+
                     while ((bytesRead = in.read(buffer)) != -1) {
                         fileOut.write(buffer, 0, bytesRead);
                         totalRead += bytesRead;
 
                         double progress = (double) totalRead / fileSize;
-                        System.out.printf("Receiving: %.2f%%\r", progress * 100);
+
+                        // Transfer hızı ve ETA hesapla
+                        long elapsedTimeNs = System.nanoTime() - startTime;
+                        double elapsedSec = elapsedTimeNs / 1_000_000_000.0;
+                        double speedKBs = elapsedSec > 0 ? (totalRead / 1024.0) / elapsedSec : 0.0;
+
+                        double remainingBytes = fileSize - totalRead;
+                        double etaSeconds = speedKBs > 0 ? (remainingBytes / 1024.0) / speedKBs : -1;
+
+                        System.out.printf("Receiving: %.2f%%, Speed: %.2f KB/s, ETA: %.1f sec\r", progress * 100, speedKBs, etaSeconds);
 
                         if (progressCallback != null) {
-                            progressCallback.onProgressUpdate(progress);
+                            progressCallback.onProgressUpdate(progress, speedKBs, etaSeconds);
                         }
 
                         if (totalRead >= fileSize) break;
                     }
                 }
 
-                System.out.println("File saved successfully at " + outFile.getAbsolutePath());
+                System.out.println("\nFile saved successfully at " + outFile.getAbsolutePath());
 
             } else {
                 writer.println("N");
