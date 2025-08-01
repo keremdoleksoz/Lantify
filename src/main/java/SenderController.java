@@ -3,7 +3,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import java.io.File;
-
+import java.util.ArrayList;
+import java.util.List;
 
 public class SenderController {
     @FXML private TextField filePathField;
@@ -11,22 +12,31 @@ public class SenderController {
     @FXML private TextField portField;
     @FXML private Label statusLabel;
     @FXML private ProgressBar progressBar;
+    @FXML private Label currentFileLabel;
 
-    private File selectedFile;
+
+
+    private List<File> selectedFiles = new ArrayList<>();
 
     @FXML
     private void handleChooseFile() {
         FileChooser fileChooser = new FileChooser();
-        selectedFile = fileChooser.showOpenDialog(null);
-        if (selectedFile != null) {
-            filePathField.setText(selectedFile.getAbsolutePath());
+        List<File> files = fileChooser.showOpenMultipleDialog(null);
+
+        if (files != null && !files.isEmpty()) {
+            selectedFiles = files;
+            StringBuilder paths = new StringBuilder();
+            for (File file : files) {
+                paths.append(file.getAbsolutePath()).append("\n");
+            }
+            filePathField.setText(paths.toString());
         }
     }
 
     @FXML
     private void handleSendFile() {
-        if(selectedFile == null || !selectedFile.exists()) {
-            statusLabel.setText("File Not Found");
+        if (selectedFiles.isEmpty()) {
+            statusLabel.setText("No files selected");
             return;
         }
 
@@ -35,22 +45,35 @@ public class SenderController {
 
         try {
             port = Integer.parseInt(portField.getText());
-        }catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             statusLabel.setText("Invalid Port Number");
             return;
         }
 
-        statusLabel.setText("Sending File ...");
-        progressBar.setProgress(0); // sıfırla
+        progressBar.setProgress(0);
+        statusLabel.setText("Sending files...");
 
         new Thread(() -> {
-            FileSender sender = new FileSender(selectedFile.getAbsolutePath(), ip, port);
-            sender.setProgressCallback(progress -> Platform.runLater(() -> progressBar.setProgress(progress)));
+            for (int i = 0; i < selectedFiles.size(); i++) {
+                File file = selectedFiles.get(i);
 
-            sender.sendFile();
+                Platform.runLater(() -> currentFileLabel.setText("Sending: " + file.getName()));
 
-            Platform.runLater(() -> statusLabel.setText("Transfer succesfull."));
+                FileSender sender = new FileSender(file.getAbsolutePath(), ip, port);
+                int index = i;
+                sender.setProgressCallback(progress -> Platform.runLater(() -> {
+
+                    double totalProgress = (index + progress) / selectedFiles.size();
+                    progressBar.setProgress(totalProgress);
+                }));
+
+                sender.sendFile();
+            }
+
+            Platform.runLater(() -> {
+                statusLabel.setText("All files sent successfully.");
+                currentFileLabel.setText("Done.");});
+
         }).start();
     }
 }
-

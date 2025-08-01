@@ -22,11 +22,11 @@ public class FileSender {
         this.progressCallback = callback;
     }
 
-    public void sendFile(){
+    public void sendFile() {
         File file = new File(filePath);
 
         if (!file.exists()) {
-            System.out.println("File does not exist");
+            System.out.println("[!] File not found: " + filePath);
             return;
         }
 
@@ -41,13 +41,17 @@ public class FileSender {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(in));
                 FileInputStream fileIn = new FileInputStream(file)
         ) {
+            System.out.println("[*] Connected to receiver: " + destinationIP + ":" + destinationPort);
+            System.out.println("[*] Sending file: " + fileName + " (" + fileSize + " bytes)");
+
+            // Metadata gönder
             writer.println(fileName);
             writer.println(fileSize);
 
             String response = reader.readLine();
 
-            if (response.equalsIgnoreCase("Y")) {
-                System.out.println("Receiver accepted. Sending file...");
+            if (response != null && response.equalsIgnoreCase("Y")) {
+                System.out.println("[*] Receiver accepted. Starting transfer...");
 
                 byte[] buffer = new byte[4096];
                 int bytesRead;
@@ -59,23 +63,23 @@ public class FileSender {
 
                     double percent = (double) totalSent / fileSize;
 
-                    // Konsol çıktısı
-                    System.out.printf("Sending: %.2f%%\r", percent * 100);
-
-                    // GUI ProgressBar'a gönder
+                    // GUI ProgressBar'a bildir
                     if (progressCallback != null) {
-                        progressCallback.onProgressUpdate(percent); // 0.0 - 1.0 arası
+                        progressCallback.onProgressUpdate(percent); // 0.0 - 1.0
                     }
+
+                    // Konsol çıktısı
+                    System.out.printf("Progress: %.2f%%\r", percent * 100);
                 }
 
-                System.out.println("\nFile sent successfully");
+                System.out.println("\n[✓] File sent successfully: " + fileName);
 
             } else {
-                System.out.println("Receiver not accepted");
+                System.out.println("[X] Transfer was refused by receiver.");
             }
 
         } catch (IOException e) {
-            System.out.println("Error! " + e.getMessage());
+            System.out.println("[!] Transfer error: " + e.getMessage());
         }
     }
 }

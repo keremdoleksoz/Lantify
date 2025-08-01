@@ -31,67 +31,76 @@ public class FileReceiver {
         this.confirmationCallback = callback;
     }
 
-    public void receiveFile() {
+    public void startReceiving() {
         try (ServerSocket serverSocket = new ServerSocket(listenPort)) {
             System.out.println("Listening on port " + listenPort);
-            Socket clientSocket = serverSocket.accept();
-            System.out.println("Accepted connection from " + clientSocket.getInetAddress().getHostName());
 
-            InputStream in = clientSocket.getInputStream();
-            OutputStream out = clientSocket.getOutputStream();
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("Accepted connection from " + clientSocket.getInetAddress().getHostName());
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            PrintWriter writer = new PrintWriter(out, true);
+                // Her dosya transferi için ayrı bir thread
+                new Thread(() -> handleSingleFileReceive(clientSocket)).start();
+            }
 
+        } catch (IOException e) {
+            System.out.println("Error! " + e.getMessage());
+        }
+    }
+
+    private void handleSingleFileReceive(Socket clientSocket) {
+        try (
+                InputStream in = clientSocket.getInputStream();
+                OutputStream out = clientSocket.getOutputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                PrintWriter writer = new PrintWriter(out, true)
+        ) {
             String fileName = reader.readLine();
             long fileSize = Long.parseLong(reader.readLine());
 
-            System.out.println("File Information:");
-            System.out.println("Name: " + fileName);
-            System.out.println("Size: " + fileSize);
+            System.out.println("File Info: " + fileName + " - " + fileSize + " bytes");
 
-            // Kullanıcıdan onay al
             boolean acceptFile = confirmationCallback == null || confirmationCallback.confirm(fileName, fileSize);
 
             if (acceptFile) {
                 writer.println("Y");
 
                 File outFile = new File(savePath + File.separator + fileName);
-                FileOutputStream fileOut = new FileOutputStream(outFile);
+                try (FileOutputStream fileOut = new FileOutputStream(outFile)) {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    long totalRead = 0;
 
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                long totalRead = 0;
+                    while ((bytesRead = in.read(buffer)) != -1) {
+                        fileOut.write(buffer, 0, bytesRead);
+                        totalRead += bytesRead;
 
-                while ((bytesRead = in.read(buffer)) != -1) {
-                    fileOut.write(buffer, 0, bytesRead);
-                    totalRead += bytesRead;
+                        double progress = (double) totalRead / fileSize;
+                        System.out.printf("Receiving: %.2f%%\r", progress * 100);
 
-                    double progress = (double) totalRead / fileSize;
-                    System.out.printf("Receiving: %.2f%%\r", progress * 100);
+                        if (progressCallback != null) {
+                            progressCallback.onProgressUpdate(progress);
+                        }
 
-                    if (progressCallback != null) {
-                        progressCallback.onProgressUpdate(progress);
+                        if (totalRead >= fileSize) break;
                     }
-
-                    if (totalRead >= fileSize) break;
                 }
 
-                fileOut.close();
                 System.out.println("File saved successfully at " + outFile.getAbsolutePath());
+
             } else {
                 writer.println("N");
-                System.out.println("Transfer refused. Connection closed!");
+                System.out.println("Transfer refused.");
             }
 
-            reader.close();
-            writer.close();
-            in.close();
-            out.close();
-            clientSocket.close();
-
         } catch (IOException e) {
-            System.out.println("Error! " + e.getMessage());
+            System.out.println("Error receiving file: " + e.getMessage());
+        } finally {
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                System.out.println("Error closing client socket.");
+            }
         }
     }
 }

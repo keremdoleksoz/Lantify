@@ -88,7 +88,7 @@ public class ReceiverController {
         });
 
         new Thread(() -> {
-            receiver.receiveFile();
+            receiver.startReceiving();
             Platform.runLater(() -> statusLabel.setText("File transfer is completed."));
         }).start();
     }
