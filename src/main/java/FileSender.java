@@ -29,7 +29,7 @@ public class FileSender {
                InputStream in = socket.getInputStream();
                PrintWriter writer = new PrintWriter(out, true);
                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-               FileInputStream fileIn = new FileInputStream(file);
+               FileInputStream fileIn = new FileInputStream(file)
                ) {
            writer.println(fileName);
            writer.println(fileSize);

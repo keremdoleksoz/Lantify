@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="ReceiverController"
+      spacing="15" alignment="CENTER" style="-fx-padding: 20;">
+
+    <Label text="File Receiver" style="-fx-font-size: 16px;"/>
+
+    <TextField fx:id="portField" promptText="Listening Port" prefWidth="300"/>
+    <TextField fx:id="savePathField" promptText="The path to be saved" prefWidth="300"/>
+    <Button text="Choose" onAction="#handleChooseFolder"/>
+
+    <Button text="Start Receiving" onAction="#handleReceive"/>
+
+    <Label fx:id="statusLabel" text="" wrapText="true"/>
+</VBox>

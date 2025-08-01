@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="SenderController"
+      spacing="15" alignment="CENTER" style="-fx-padding: 20;">
+
+    <Label text="File Sender" style="-fx-font-size: 16px;"/>
+
+    <TextField fx:id="filePathField" promptText="File path" prefWidth="300"/>
+    <Button text="Choose a file" onAction="#handleChooseFile"/>
+
+    <TextField fx:id="ipField" promptText="Enter the destination IP" prefWidth="300"/>
+    <TextField fx:id="portField" promptText="Enter the destination Port" prefWidth="300"/>
+
+    <Button text="Send" onAction="#handleSendFile"/>
+
+    <Label fx:id="statusLabel" text="" wrapText="true"/>
+</VBox>

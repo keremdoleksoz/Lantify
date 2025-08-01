@@ -12,7 +12,7 @@ public class FileReceiver {
         this.savePath = savePath;
     }
 
-    public void receiveFile() {
+    public void receiveFile(boolean acceptFile) {
         try (ServerSocket serverSocket = new ServerSocket(listenPort)) {
             System.out.println("Listening on port " + listenPort);
             Socket clientSocket = serverSocket.accept();
@@ -31,11 +31,8 @@ public class FileReceiver {
             System.out.println("File Name: " + fileName);
             System.out.println("File Size: " + fileSize);
 
-            Scanner scanner = new Scanner(System.in);
-            System.out.println("Are you accepting the file ? (y/n): ");
-            String answer = scanner.nextLine().trim().toUpperCase();
 
-            if (answer.equals("Y")) {
+            if (acceptFile) {
                 writer.println("Y");
 
                 File outFile = new File(savePath + File.separator + fileName);
@@ -66,7 +63,7 @@ public class FileReceiver {
             in.close();
             out.close();
             clientSocket.close();
-            scanner.close();
+
 
 
         } catch (IOException e) {

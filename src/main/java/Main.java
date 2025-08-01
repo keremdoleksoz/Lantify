@@ -1,44 +1,100 @@
-import java.util.Scanner;
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.stage.Stage;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 
-public class Main {
-    public static void main(String [] arguments){
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("For avoiding problems please run at Receiver computer first");
-        System.out.println("1- File Send \n2- File Receive");
-        System.out.println("Enter your choice");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
+public class Main extends Application {
 
-        if (choice == 1) {
-            System.out.println("Enter the file path");
-            String filePath = scanner.nextLine();
-            System.out.println("Enter the destination IP");
-            String destinationIP  = scanner.nextLine();
-            System.out.println("Enter the destination port");
-            int destinationPort  = scanner.nextInt();
+    @Override
+    public void start(Stage stage) {
+        // Logo
+        Image logoImage = new Image(getClass().getResource("/icon/lantify-icon-trans.png").toExternalForm());
+        ImageView logoView = new ImageView(logoImage);
+        logoView.setFitWidth(200);
+        logoView.setPreserveRatio(true);
 
-            FileSender sender = new FileSender(filePath, destinationIP, destinationPort);
+        // Başlık
+        Label label = new Label("Lantify - LAN Transfer File Application");
+        label.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;");
 
-            sender.sendFile();
+        // Butonlar
+        Button sendButton = new Button("Send");
+        Button receiveButton = new Button("Receive");
 
+        sendButton.setPrefSize(200, 120);
+        receiveButton.setPrefSize(200, 120);
+
+        sendButton.setStyle("-fx-font-size: 16px;");
+        receiveButton.setStyle("-fx-font-size: 16px;");
+
+        sendButton.setOnAction(e -> openSenderWindow());
+        receiveButton.setOnAction(e -> openReceiverWindow());
+
+        HBox buttonBox = new HBox(40, sendButton, receiveButton);
+        buttonBox.setAlignment(Pos.CENTER);
+
+        // Alt bilgi
+        Label tipLabel = new Label("** For optimal use, start the receiver computer first. **");
+        tipLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: white;");
+
+        // Genel düzen
+        VBox layout = new VBox();
+        layout.setAlignment(Pos.CENTER);
+        layout.setPadding(new Insets(40));
+        layout.setSpacing(15);  // Tüm bileşenler arası boşluk
+
+        VBox.setMargin(logoView, new Insets(0, 0, -10, 0));  // Logo ile yazı daha yakın
+        VBox.setMargin(label, new Insets(0, 0, 10, 0));
+        VBox.setMargin(buttonBox, new Insets(20, 0, 0, 0));
+        VBox.setMargin(tipLabel, new Insets(10, 0, 0, 0));
+
+        layout.getChildren().addAll(logoView, label, buttonBox, tipLabel);
+        layout.setStyle("-fx-background-color: #3f51b5;");
+
+        // Sahne ayarları
+        Scene scene = new Scene(layout, 540, 450);
+        stage.setTitle("Lantify");
+        stage.getIcons().add(new Image(getClass().getResourceAsStream("/icon/lantify-icon.png")));
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private void openSenderWindow() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/sender.fxml"));
+            Parent root = loader.load();
+            Stage senderStage = new Stage();
+            senderStage.setTitle("Send File");
+            senderStage.setScene(new Scene(root));
+            senderStage.getIcons().add(new Image(getClass().getResourceAsStream("/icon/lantify-icon.png")));
+            senderStage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        else if (choice == 2) {
-            System.out.println("Enter the listening port");
-            int listenPort = scanner.nextInt();
-            scanner.nextLine();
-            System.out.println("Enter the saving path");
-            String savePath = scanner.nextLine();
+    }
 
-            FileReceiver receiver = new FileReceiver(listenPort, savePath);
-            receiver.receiveFile();
-
+    private void openReceiverWindow() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/receiver.fxml"));
+            Parent root = loader.load();
+            Stage receiverStage = new Stage();
+            receiverStage.setTitle("Receive File");
+            receiverStage.setScene(new Scene(root));
+            receiverStage.getIcons().add(new Image(getClass().getResourceAsStream("/icon/lantify-icon.png")));
+            receiverStage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        else {
-            System.out.println("Invalid choice");
-        }
+    }
 
-        scanner.close();
-
-
+    public static void main(String[] arguments) {
+        launch();
     }
 }
