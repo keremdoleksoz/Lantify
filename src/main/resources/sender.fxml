@@ -21,7 +21,6 @@
     <Label fx:id="statusLabel" text="" wrapText="true"/>
     <Label fx:id="currentFileLabel" text="No file selected" wrapText="true"/>
     <ProgressBar fx:id="progressBar" prefWidth="300" progress="0.0"/>
-    <Label fx:id="speedLabel" text="Speed: -" />
-    <Label fx:id="etaLabel" text="ETA: -" />
+
 
 </VBox>
