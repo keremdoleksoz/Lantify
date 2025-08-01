@@ -41,7 +41,7 @@ public class Main extends Application {
         buttonBox.setAlignment(Pos.CENTER);
 
         // Alt bilgi
-        Label tipLabel = new Label("** For optimal use, start the receiver computer first. **");
+        Label tipLabel = new Label(" ( For optimal use, start the receiver computer first. ) ");
         tipLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: white;");
 
         // Genel düzen

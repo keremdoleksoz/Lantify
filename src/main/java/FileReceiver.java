@@ -1,7 +1,6 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class FileReceiver {
     private int listenPort;
@@ -10,6 +9,17 @@ public class FileReceiver {
     public FileReceiver(int listenPort, String savePath) {
         this.listenPort = listenPort;
         this.savePath = savePath;
+    }
+
+
+    public interface ProgressCallback {
+        void onProgressUpdate(double progress); // 0.0 - 1.0
+    }
+
+    private ProgressCallback progressCallback;
+
+    public void setProgressCallback(ProgressCallback callback) {
+        this.progressCallback = callback;
     }
 
     public void receiveFile(boolean acceptFile) {
@@ -31,7 +41,6 @@ public class FileReceiver {
             System.out.println("File Name: " + fileName);
             System.out.println("File Size: " + fileSize);
 
-
             if (acceptFile) {
                 writer.println("Y");
 
@@ -40,22 +49,29 @@ public class FileReceiver {
 
                 byte[] buffer = new byte[4096];
                 int bytesRead;
-                long totalRead= 0;
+                long totalRead = 0;
 
-                while((bytesRead = in.read(buffer)) != -1){
+                while ((bytesRead = in.read(buffer)) != -1) {
                     fileOut.write(buffer, 0, bytesRead);
                     totalRead += bytesRead;
-                    double percent = (double) totalRead / fileSize *100;
-                    System.out.printf("Receiving: %.2f%%\r", percent);
-                    if(totalRead >= fileSize) break;
+
+                    double progress = (double) totalRead / fileSize;
+                    System.out.printf("Receiving: %.2f%%\r", progress * 100);
+
+                    // GUI tarafına ilerleme bildirimi
+                    if (progressCallback != null) {
+                        progressCallback.onProgressUpdate(progress);
+                    }
+
+                    if (totalRead >= fileSize) break;
                 }
 
                 fileOut.close();
-                System.out.println("File saved successfully at " + outFile.getAbsolutePath() );
+                System.out.println("File saved successfully at " + outFile.getAbsolutePath());
 
             } else {
                 writer.println("N");
-                System.out.println("Transfer refused. Connection closed !");
+                System.out.println("Transfer refused. Connection closed!");
             }
 
             reader.close();
@@ -64,11 +80,8 @@ public class FileReceiver {
             out.close();
             clientSocket.close();
 
-
-
         } catch (IOException e) {
-            System.out.println("Error ! " + e.getMessage());
+            System.out.println("Error! " + e.getMessage());
         }
     }
-
 }

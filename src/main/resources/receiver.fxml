@@ -12,9 +12,12 @@
 
     <TextField fx:id="portField" promptText="Listening Port" prefWidth="300"/>
     <TextField fx:id="savePathField" promptText="The path to be saved" prefWidth="300"/>
-    <Button text="Choose" onAction="#handleChooseFolder"/>
+    <Button text="Choose a path" onAction="#handleChooseFolder"/>
 
     <Button text="Start Receiving" onAction="#handleReceive"/>
 
     <Label fx:id="statusLabel" text="" wrapText="true"/>
+
+    <ProgressBar fx:id="progressBar" prefWidth="300" progress="0.0"/>
+
 </VBox>

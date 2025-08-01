@@ -1,3 +1,4 @@
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.DirectoryChooser;
@@ -7,6 +8,7 @@ public class ReceiverController {
     @FXML private TextField portField;
     @FXML private TextField savePathField;
     @FXML private Label statusLabel;
+    @FXML private ProgressBar progressBar;
 
     private File selectedFolder;
 
@@ -20,39 +22,45 @@ public class ReceiverController {
     }
 
     @FXML
-    private void handleReceive(){
+    private void handleReceive() {
+        String folderPath = savePathField.getText();
         int port;
 
-        String folderPath=savePathField.getText();
-
-        if(folderPath == null || folderPath.trim().isEmpty()){
-            statusLabel.setText("Select a Folder Path");
+        if (folderPath == null || folderPath.trim().isEmpty()) {
+            statusLabel.setText("Select a folder path.");
             return;
         }
 
         File folder = new File(folderPath);
-        if(!folder.exists() || !folder.isDirectory()){
-            statusLabel.setText("Invalid File Path");
+        if (!folder.exists() || !folder.isDirectory()) {
+            statusLabel.setText("Invalid folder path.");
             return;
         }
 
         try {
             port = Integer.parseInt(portField.getText());
-        }catch (NumberFormatException e){
-            statusLabel.setText("Invalid Port Number");
+        } catch (NumberFormatException e) {
+            statusLabel.setText("Invalid port number.");
             return;
         }
 
-        statusLabel.setText("Connecting...");
+        statusLabel.setText("Waiting for sender...");
+        progressBar.setProgress(0);
 
-        FileReceiver receiver = new FileReceiver(port, folder.getAbsolutePath());
+        FileReceiver receiver = new FileReceiver(port, folderPath);
+
+        // Progress bar güncelleyicisi
+        receiver.setProgressCallback(progress -> Platform.runLater(() -> {
+            progressBar.setProgress(progress);
+        }));
 
         new Thread(() -> {
+            receiver.receiveFile(true); // otomatik kabul
 
-            receiver.receiveFile(true);
-
-            statusLabel.setText("File transfer is completed.");
+            Platform.runLater(() -> {
+                statusLabel.setText("File transfer completed.");
+                progressBar.setProgress(1.0); // %100 tamamlandı
+            });
         }).start();
     }
-
 }

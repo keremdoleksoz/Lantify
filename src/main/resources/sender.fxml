@@ -16,7 +16,9 @@
     <TextField fx:id="ipField" promptText="Enter the destination IP" prefWidth="300"/>
     <TextField fx:id="portField" promptText="Enter the destination Port" prefWidth="300"/>
 
-    <Button text="Send" onAction="#handleSendFile"/>
+    <Button text="Start Sending" onAction="#handleSendFile"/>
 
     <Label fx:id="statusLabel" text="" wrapText="true"/>
+
+    <ProgressBar fx:id="progressBar" prefWidth="300" progress="0.0"/>
 </VBox>

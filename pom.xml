@@ -16,14 +16,14 @@
     </properties>
 
     <dependencies>
-        <!-- JavaFX controls -->
+
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
         </dependency>
 
-        <!-- JavaFX FXML (eğer arayüzü fxml ile yapacaksan gerekli) -->
+
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
@@ -33,7 +33,7 @@
 
     <build>
         <plugins>
-            <!-- JavaFX Maven Plugin -->
+
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>

@@ -1,13 +1,16 @@
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import java.io.File;
+
 
 public class SenderController {
     @FXML private TextField filePathField;
     @FXML private TextField ipField;
     @FXML private TextField portField;
     @FXML private Label statusLabel;
+    @FXML private ProgressBar progressBar;
 
     private File selectedFile;
 
@@ -37,12 +40,17 @@ public class SenderController {
             return;
         }
 
-        FileSender sender = new FileSender(selectedFile.getAbsolutePath(),  ip, port);
         statusLabel.setText("Sending File ...");
+        progressBar.setProgress(0); // sıfırla
 
         new Thread(() -> {
+            FileSender sender = new FileSender(selectedFile.getAbsolutePath(), ip, port);
+            sender.setProgressCallback(progress -> Platform.runLater(() -> progressBar.setProgress(progress)));
+
             sender.sendFile();
-            statusLabel.setText("File Transfer is completed.");
+
+            Platform.runLater(() -> statusLabel.setText("Transfer succesfull."));
         }).start();
     }
 }
+
