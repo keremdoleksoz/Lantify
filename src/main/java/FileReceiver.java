@@ -5,6 +5,8 @@ import java.net.Socket;
 public class FileReceiver {
     private int listenPort;
     private String savePath;
+    private volatile boolean running = true;
+    private ServerSocket serverSocket;
 
     public FileReceiver(int listenPort, String savePath) {
         this.listenPort = listenPort;
@@ -32,18 +34,41 @@ public class FileReceiver {
     }
 
     public void startReceiving() {
-        try (ServerSocket serverSocket = new ServerSocket(listenPort)) {
+        try {
+            serverSocket = new ServerSocket(listenPort);
+            serverSocket.setReuseAddress(true);
             System.out.println("Listening on port " + listenPort);
 
-            while (true) {
+            while (running) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Accepted connection from " + clientSocket.getInetAddress().getHostName());
-
                 new Thread(() -> handleSingleFileReceive(clientSocket)).start();
             }
 
         } catch (IOException e) {
-            System.out.println("Error! " + e.getMessage());
+            if (running) {
+                System.out.println("Error! " + e.getMessage());
+            } else {
+                System.out.println("Server stopped.");
+            }
+        } finally {
+            try {
+                if (serverSocket != null && !serverSocket.isClosed()) {
+                    serverSocket.close();
+                }
+            } catch (IOException e) {
+                System.out.println("Error closing server socket.");
+            }
+        }
+    }
+
+    public void stop() {
+        running = false;
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();  // Blocking accept() kırılır
+            }
+        } catch (IOException e) {
+            System.out.println("Error closing server socket.");
         }
     }
 
@@ -57,8 +82,6 @@ public class FileReceiver {
             String fileName = reader.readLine();
             long fileSize = Long.parseLong(reader.readLine());
 
-            System.out.println("File Info: " + fileName + " - " + fileSize + " bytes");
-
             boolean acceptFile = confirmationCallback == null || confirmationCallback.confirm(fileName, fileSize);
 
             if (acceptFile) {
@@ -69,7 +92,6 @@ public class FileReceiver {
                     byte[] buffer = new byte[4096];
                     int bytesRead;
                     long totalRead = 0;
-
                     long startTime = System.nanoTime();
 
                     while ((bytesRead = in.read(buffer)) != -1) {
@@ -77,16 +99,9 @@ public class FileReceiver {
                         totalRead += bytesRead;
 
                         double progress = (double) totalRead / fileSize;
-
-                        // Transfer hızı ve ETA hesapla
-                        long elapsedTimeNs = System.nanoTime() - startTime;
-                        double elapsedSec = elapsedTimeNs / 1_000_000_000.0;
+                        double elapsedSec = (System.nanoTime() - startTime) / 1_000_000_000.0;
                         double speedKBs = elapsedSec > 0 ? (totalRead / 1024.0) / elapsedSec : 0.0;
-
-                        double remainingBytes = fileSize - totalRead;
-                        double etaSeconds = speedKBs > 0 ? (remainingBytes / 1024.0) / speedKBs : -1;
-
-                        System.out.printf("Receiving: %.2f%%, Speed: %.2f KB/s, ETA: %.1f sec\r", progress * 100, speedKBs, etaSeconds);
+                        double etaSeconds = speedKBs > 0 ? ((fileSize - totalRead) / 1024.0) / speedKBs : -1;
 
                         if (progressCallback != null) {
                             progressCallback.onProgressUpdate(progress, speedKBs, etaSeconds);
@@ -96,8 +111,7 @@ public class FileReceiver {
                     }
                 }
 
-                System.out.println("\nFile saved successfully at " + outFile.getAbsolutePath());
-
+                System.out.println("File saved successfully at " + outFile.getAbsolutePath());
             } else {
                 writer.println("N");
                 System.out.println("Transfer refused.");

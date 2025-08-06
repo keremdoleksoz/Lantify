@@ -13,6 +13,19 @@ public class ReceiverController {
     @FXML private Label etaLabel;
 
     private File selectedFolder;
+    private FileReceiver receiver;
+
+    @FXML
+    private void initialize() {
+        Platform.runLater(() -> {
+            savePathField.getScene().getWindow().setOnCloseRequest(event -> {
+                if (receiver != null) {
+                    receiver.stop();
+                    System.out.println("Receiver durduruldu. Port kapatıldı.");
+                }
+            });
+        });
+    }
 
     @FXML
     private void handleChooseFolder() {
@@ -52,12 +65,20 @@ public class ReceiverController {
         speedLabel.setText("Speed: -");
         etaLabel.setText("ETA: -");
 
-        FileReceiver receiver = new FileReceiver(port, folder.getAbsolutePath());
+        receiver = new FileReceiver(port, folder.getAbsolutePath());
 
         // Progress callback: speed, eta, percent
         receiver.setProgressCallback((progress, speedKBs, etaSeconds) -> Platform.runLater(() -> {
             progressBar.setProgress(progress);
-            speedLabel.setText(String.format("Speed: %.2f KB/s", speedKBs));
+
+            String speedText;
+            if (speedKBs >= 1024) {
+                speedText = String.format("Speed: %.2f MB/s", speedKBs / 1024);
+            } else {
+                speedText = String.format("Speed: %.2f KB/s", speedKBs);
+            }
+            speedLabel.setText(speedText);
+
             etaLabel.setText(String.format("ETA: %.1f sec", etaSeconds));
         }));
 
