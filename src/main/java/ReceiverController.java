@@ -91,7 +91,21 @@ public class ReceiverController {
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                 alert.setTitle("Incoming File");
                 alert.setHeaderText("Do you want to receive this file?");
-                alert.setContentText("File Name: " + fileName + "\nFile Size: " + (fileSize / 1024) + " KB");
+
+                String formattedSize;
+
+                if(fileSize >= 1024 * 1024 * 1024) {
+                    formattedSize = String.format("%.2f GB", fileSize / (1024.0 * 1024 * 1024));
+                } else if (fileSize > 1024 * 1024) {
+                    formattedSize = String.format("%.2f MB", fileSize / (1024.0 * 1024));
+                } else if (fileSize > 1024) {
+                    formattedSize = String.format("%.2f KB", fileSize / (1024.0));
+                }else {
+                    formattedSize = fileSize + "Byte";
+                }
+
+                alert.setContentText("File Name: " + fileName + "\nFile Size: " + formattedSize);
+
 
                 ButtonType yes = new ButtonType("Yes");
                 ButtonType no = new ButtonType("No", ButtonBar.ButtonData.CANCEL_CLOSE);
