@@ -44,7 +44,7 @@ public class FileSender {
             System.out.println("[*] Connected to receiver: " + destinationIP + ":" + destinationPort);
             System.out.println("[*] Sending file: " + fileName + " (" + fileSize + " bytes)");
 
-            // Metadata gönder
+            // Sending metadata
             writer.println(fileName);
             writer.println(fileSize);
 
@@ -63,12 +63,12 @@ public class FileSender {
 
                     double percent = (double) totalSent / fileSize;
 
-                    // GUI ProgressBar'a bildir
+
                     if (progressCallback != null) {
                         progressCallback.onProgressUpdate(percent); // 0.0 - 1.0
                     }
 
-                    // Konsol çıktısı
+                    // Console output
                     System.out.printf("Progress: %.2f%%\r", percent * 100);
                 }
 

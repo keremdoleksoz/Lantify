@@ -65,7 +65,7 @@ public class FileReceiver {
         running = false;
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
-                serverSocket.close();  // Blocking accept() kırılır
+                serverSocket.close();
             }
         } catch (IOException e) {
             System.out.println("Error closing server socket.");

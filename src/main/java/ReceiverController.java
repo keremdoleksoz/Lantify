@@ -21,7 +21,7 @@ public class ReceiverController {
             savePathField.getScene().getWindow().setOnCloseRequest(event -> {
                 if (receiver != null) {
                     receiver.stop();
-                    System.out.println("Receiver durduruldu. Port kapatıldı.");
+                    System.out.println("Receiver stopped. Port shutted down.");
                 }
             });
         });
@@ -82,7 +82,7 @@ public class ReceiverController {
             etaLabel.setText(String.format("ETA: %.1f sec", etaSeconds));
         }));
 
-        // Onay ekranı
+        // Confirmation Screen
         receiver.setConfirmationCallback((fileName, fileSize) -> {
             final boolean[] userDecision = {false};
             final Object lock = new Object();
@@ -91,7 +91,6 @@ public class ReceiverController {
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                 alert.setTitle("Incoming File");
                 alert.setHeaderText("Do you want to receive this file?");
-
                 String formattedSize;
 
                 if(fileSize >= 1024 * 1024 * 1024) {
